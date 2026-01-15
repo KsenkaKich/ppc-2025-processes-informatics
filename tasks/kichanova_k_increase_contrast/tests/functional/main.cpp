@@ -40,7 +40,7 @@ class KichanovaKIncreaseContrastFuncTests : public ppc::util::BaseRunFuncTests<I
       input_data_.height = 8;
       input_data_.channels = 3;
       input_data_.pixels.resize(8 * 8 * 3);
-      
+
       for (int y = 0; y < 8; ++y) {
         for (int x = 0; x < 8; ++x) {
           size_t idx = (y * 8 + x) * 3;
@@ -73,12 +73,12 @@ class KichanovaKIncreaseContrastFuncTests : public ppc::util::BaseRunFuncTests<I
     }
 
     KichanovaKIncreaseContrastSEQ seq_task(input_data_);
-    
+
     if (seq_task.Validation()) {
       seq_task.PreProcessing();
       seq_task.Run();
       seq_task.PostProcessing();
-      
+
       ref_output_ = seq_task.GetOutput();
     }
   }
@@ -106,16 +106,13 @@ TEST_P(KichanovaKIncreaseContrastFuncTests, IncreaseContrast) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 4> kTestParam = {
-    std::make_tuple(1, "small"),
-    std::make_tuple(2, "gradient"),
-    std::make_tuple(3, "mpi_edge"),
-    std::make_tuple(4, "real_image")
-};
+const std::array<TestType, 4> kTestParam = {std::make_tuple(1, "small"), std::make_tuple(2, "gradient"),
+                                            std::make_tuple(3, "mpi_edge"), std::make_tuple(4, "real_image")};
 
-const auto kTestTasksList =
-    std::tuple_cat(ppc::util::AddFuncTask<KichanovaKIncreaseContrastMPI, InType>(kTestParam, PPC_SETTINGS_kichanova_k_increase_contrast),
-                   ppc::util::AddFuncTask<KichanovaKIncreaseContrastSEQ, InType>(kTestParam, PPC_SETTINGS_kichanova_k_increase_contrast));
+const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KichanovaKIncreaseContrastMPI, InType>(
+                                               kTestParam, PPC_SETTINGS_kichanova_k_increase_contrast),
+                                           ppc::util::AddFuncTask<KichanovaKIncreaseContrastSEQ, InType>(
+                                               kTestParam, PPC_SETTINGS_kichanova_k_increase_contrast));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

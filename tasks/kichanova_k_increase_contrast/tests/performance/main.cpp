@@ -38,8 +38,7 @@ class KichanovaKIncreaseContrastPerfTests : public ppc::util::BaseRunPerfTests<I
       return false;
     }
 
-    return output_data.width == kWidth_ && 
-           output_data.height == kHeight_ && 
+    return output_data.width == kWidth_ && output_data.height == kHeight_ &&
            output_data.pixels.size() == static_cast<size_t>(kWidth_) * kHeight_ * 3;
   }
 
@@ -53,7 +52,8 @@ TEST_P(KichanovaKIncreaseContrastPerfTests, RunPerfModes) {
 }
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, KichanovaKIncreaseContrastMPI, KichanovaKIncreaseContrastSEQ>(PPC_SETTINGS_kichanova_k_increase_contrast);
+    ppc::util::MakeAllPerfTasks<InType, KichanovaKIncreaseContrastMPI, KichanovaKIncreaseContrastSEQ>(
+        PPC_SETTINGS_kichanova_k_increase_contrast);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

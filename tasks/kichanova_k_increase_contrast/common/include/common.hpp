@@ -12,7 +12,7 @@ struct Image {
   std::vector<uint8_t> pixels;
   int width;
   int height;
-  int channels; 
+  int channels;
 };
 
 using InType = Image;
