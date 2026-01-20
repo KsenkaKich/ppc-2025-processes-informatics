@@ -7,15 +7,14 @@
 #include <random>
 #include <vector>
 
-#include "util/include/perf_test_util.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/common/include/common.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/mpi/include/ops_mpi.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/seq/include/ops_seq.hpp"
+#include "util/include/perf_test_util.hpp"
 
 namespace kichanova_k_shellsort_batcher_oddeven_merge {
 
 class KichanovaKShellsortBatcherOddEvenMergePerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  
   const int kCount_ = 10000;
   InType input_size_ = 0;
 
@@ -25,10 +24,10 @@ class KichanovaKShellsortBatcherOddEvenMergePerfTests : public ppc::util::BaseRu
 
   bool CheckTestOutputData(OutType &output_data) final {
     std::vector<int> data(static_cast<std::size_t>(input_size_));
-    
+
     std::mt19937 rng(static_cast<unsigned int>(input_size_));
     std::uniform_int_distribution<int> dist(0, 1000000);
-    
+
     for (int &v : data) {
       v = dist(rng);
     }
@@ -109,8 +108,9 @@ TEST_P(KichanovaKShellsortBatcherOddEvenMergePerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
-const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, KichanovaKShellsortBatcherOddEvenMergeMPI, KichanovaKShellsortBatcherOddEvenMergeSEQ>(PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge);
+const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, KichanovaKShellsortBatcherOddEvenMergeMPI,
+                                                       KichanovaKShellsortBatcherOddEvenMergeSEQ>(
+    PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

@@ -10,16 +10,15 @@
 #include <tuple>
 #include <vector>
 
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/common/include/common.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/mpi/include/ops_mpi.hpp"
 #include "kichanova_k_shellsort_batcher_oddeven_merge/seq/include/ops_seq.hpp"
+#include "util/include/func_test_util.hpp"
+#include "util/include/util.hpp"
 
 namespace kichanova_k_shellsort_batcher_oddeven_merge {
 
-class KichanovaKShellsortBatcherOddEvenMergeFuncTests : 
-    public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class KichanovaKShellsortBatcherOddEvenMergeFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
@@ -33,10 +32,10 @@ class KichanovaKShellsortBatcherOddEvenMergeFuncTests :
 
   bool CheckTestOutputData(OutType &output_data) final {
     std::vector<int> data(static_cast<std::size_t>(input_size_));
-    
+
     std::mt19937 rng(static_cast<unsigned int>(input_size_));
     std::uniform_int_distribution<int> dist(0, 1000000);
-    
+
     for (int &v : data) {
       v = dist(rng);
     }
@@ -122,20 +121,18 @@ TEST_P(KichanovaKShellsortBatcherOddEvenMergeFuncTests, MatmulFromPic) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 4> kTestParam = {
-    std::make_tuple(100, "small"),
-    std::make_tuple(1000, "medium"),
-    std::make_tuple(5000, "large"),
-    std::make_tuple(10000, "xlarge")
-};
+const std::array<TestType, 4> kTestParam = {std::make_tuple(100, "small"), std::make_tuple(1000, "medium"),
+                                            std::make_tuple(5000, "large"), std::make_tuple(10000, "xlarge")};
 
-const auto kTestTasksList =
-    std::tuple_cat(ppc::util::AddFuncTask<KichanovaKShellsortBatcherOddEvenMergeMPI, InType>(kTestParam, PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge),
-                   ppc::util::AddFuncTask<KichanovaKShellsortBatcherOddEvenMergeSEQ, InType>(kTestParam, PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge));
+const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KichanovaKShellsortBatcherOddEvenMergeMPI, InType>(
+                                               kTestParam, PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge),
+                                           ppc::util::AddFuncTask<KichanovaKShellsortBatcherOddEvenMergeSEQ, InType>(
+                                               kTestParam, PPC_SETTINGS_kichanova_k_shellsort_batcher_oddeven_merge));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = KichanovaKShellsortBatcherOddEvenMergeFuncTests::PrintFuncTestName<KichanovaKShellsortBatcherOddEvenMergeFuncTests>;
+const auto kPerfTestName =
+    KichanovaKShellsortBatcherOddEvenMergeFuncTests::PrintFuncTestName<KichanovaKShellsortBatcherOddEvenMergeFuncTests>;
 
 INSTANTIATE_TEST_SUITE_P(PicMatrixTests, KichanovaKShellsortBatcherOddEvenMergeFuncTests, kGtestValues, kPerfTestName);
 

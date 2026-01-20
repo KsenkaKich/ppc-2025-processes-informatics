@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <random>
 #include <vector>
-#include <numeric>
 
 #include "kichanova_k_shellsort_batcher_oddeven_merge/common/include/common.hpp"
 #include "util/include/util.hpp"
@@ -28,7 +28,7 @@ bool KichanovaKShellsortBatcherOddEvenMergeSEQ::PreProcessingImpl() {
 
 bool KichanovaKShellsortBatcherOddEvenMergeSEQ::RunImpl() {
   const InType n = GetInput();
-  
+
   if (n <= 0) {
     return false;
   }
@@ -36,7 +36,7 @@ bool KichanovaKShellsortBatcherOddEvenMergeSEQ::RunImpl() {
   std::vector<int> data(static_cast<std::size_t>(n));
   std::mt19937 gen(static_cast<unsigned int>(n));
   std::uniform_int_distribution<int> dist(0, 1000000);
-  
+
   for (int &v : data) {
     v = dist(gen);
   }
@@ -62,8 +62,8 @@ bool KichanovaKShellsortBatcherOddEvenMergeSEQ::RunImpl() {
 
   std::int64_t checksum = std::accumulate(data.begin(), data.end(), static_cast<std::int64_t>(0));
   GetOutput() = static_cast<OutType>(checksum & 0x7FFFFFFF);
-  
-return true;
+
+  return true;
 }
 
 void KichanovaKShellsortBatcherOddEvenMergeSEQ::ShellSort(std::vector<int> &arr) {
@@ -91,11 +91,12 @@ void KichanovaKShellsortBatcherOddEvenMergeSEQ::ShellSort(std::vector<int> &arr)
   }
 }
 
-void KichanovaKShellsortBatcherOddEvenMergeSEQ::OddEvenBatcherMerge(const std::vector<int> &left, const std::vector<int> &right, std::vector<int> &merged) {
-  
+void KichanovaKShellsortBatcherOddEvenMergeSEQ::OddEvenBatcherMerge(const std::vector<int> &left,
+                                                                    const std::vector<int> &right,
+                                                                    std::vector<int> &merged) {
   merged.resize(left.size() + right.size());
   std::merge(left.begin(), left.end(), right.begin(), right.end(), merged.begin());
-  
+
   for (int j = 0; j < 2; ++j) {
     auto start = static_cast<std::size_t>(j);
     for (std::size_t i = start; i + 1 < merged.size(); i += 2) {
