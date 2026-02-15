@@ -55,8 +55,12 @@ bool KichanovaKIncreaseContrastMPI::RunImpl() {
       size_t idx = (row * width + col) * channels;
       for (int c = 0; c < 3; ++c) {
         uint8_t val = input.pixels[idx + c];
-        if (val < local_min[c]) local_min[c] = val;
-        if (val > local_max[c]) local_max[c] = val;
+        if (val < local_min[c]) {
+          local_min[c] = val;
+        }
+        if (val > local_max[c]) {
+          local_max[c] = val;
+        }
       }
     }
   }
@@ -105,7 +109,8 @@ bool KichanovaKIncreaseContrastMPI::RunImpl() {
     displs[i] = i_start_row * row_size;
   }
 
-  MPI_Allgatherv(local_output.data(), local_rows * row_size, MPI_UINT8_T, output.pixels.data(), recv_counts.data(), displs.data(), MPI_UINT8_T, MPI_COMM_WORLD);
+  MPI_Allgatherv(local_output.data(), local_rows * row_size, MPI_UINT8_T, output.pixels.data(), recv_counts.data(),
+                 displs.data(), MPI_UINT8_T, MPI_COMM_WORLD);
 
   return true;
 }
