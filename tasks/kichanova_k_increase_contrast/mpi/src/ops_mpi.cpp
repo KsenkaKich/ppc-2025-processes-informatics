@@ -35,6 +35,7 @@ bool KichanovaKIncreaseContrastMPI::RunImpl() {
   const int width = input.width;
   const int height = input.height;
   const int channels = 3;
+  const int row_size = width * channels;
 
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -42,120 +43,70 @@ bool KichanovaKIncreaseContrastMPI::RunImpl() {
 
   int rows_per_process = height / size;
   int remainder = height % size;
-
   int start_row = rank * rows_per_process + std::min(rank, remainder);
   int end_row = start_row + rows_per_process + (rank < remainder ? 1 : 0);
   int local_rows = end_row - start_row;
 
-  uint8_t local_min_r = 255, local_max_r = 0;
-  uint8_t local_min_g = 255, local_max_g = 0;
-  uint8_t local_min_b = 255, local_max_b = 0;
+  uint8_t local_min[3] = {255, 255, 255};
+  uint8_t local_max[3] = {0, 0, 0};
 
   for (int row = start_row; row < end_row; ++row) {
     for (int col = 0; col < width; ++col) {
       size_t idx = (row * width + col) * channels;
-
-      uint8_t r = input.pixels[idx];
-      uint8_t g = input.pixels[idx + 1];
-      uint8_t b = input.pixels[idx + 2];
-
-      if (r < local_min_r) {
-        local_min_r = r;
-      }
-      if (r > local_max_r) {
-        local_max_r = r;
-      }
-      if (g < local_min_g) {
-        local_min_g = g;
-      }
-      if (g > local_max_g) {
-        local_max_g = g;
-      }
-      if (b < local_min_b) {
-        local_min_b = b;
-      }
-      if (b > local_max_b) {
-        local_max_b = b;
+      for (int c = 0; c < 3; ++c) {
+        uint8_t val = input.pixels[idx + c];
+        if (val < local_min[c]) local_min[c] = val;
+        if (val > local_max[c]) local_max[c] = val;
       }
     }
   }
 
-  uint8_t global_min_r, global_max_r;
-  uint8_t global_min_g, global_max_g;
-  uint8_t global_min_b, global_max_b;
+  uint8_t global_min[3], global_max[3];
+  MPI_Allreduce(local_min, global_min, 3, MPI_UINT8_T, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(local_max, global_max, 3, MPI_UINT8_T, MPI_MAX, MPI_COMM_WORLD);
 
-  MPI_Allreduce(&local_min_r, &global_min_r, 1, MPI_UINT8_T, MPI_MIN, MPI_COMM_WORLD);
-  MPI_Allreduce(&local_max_r, &global_max_r, 1, MPI_UINT8_T, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&local_min_g, &global_min_g, 1, MPI_UINT8_T, MPI_MIN, MPI_COMM_WORLD);
-  MPI_Allreduce(&local_max_g, &global_max_g, 1, MPI_UINT8_T, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&local_min_b, &global_min_b, 1, MPI_UINT8_T, MPI_MIN, MPI_COMM_WORLD);
-  MPI_Allreduce(&local_max_b, &global_max_b, 1, MPI_UINT8_T, MPI_MAX, MPI_COMM_WORLD);
-
-  float scale_r = 0.0f, scale_g = 0.0f, scale_b = 0.0f;
-
-  if (global_max_r > global_min_r) {
-    scale_r = 255.0f / (global_max_r - global_min_r);
+  float scale[3];
+  bool need_scale[3];
+  for (int c = 0; c < 3; ++c) {
+    if (global_max[c] > global_min[c]) {
+      scale[c] = 255.0f / (global_max[c] - global_min[c]);
+      need_scale[c] = true;
+    } else {
+      scale[c] = 0.0f;
+      need_scale[c] = false;
+    }
   }
 
-  if (global_max_g > global_min_g) {
-    scale_g = 255.0f / (global_max_g - global_min_g);
-  }
-
-  if (global_max_b > global_min_b) {
-    scale_b = 255.0f / (global_max_b - global_min_b);
-  }
-
-  std::vector<uint8_t> local_output(local_rows * width * channels);
-
+  std::vector<uint8_t> local_output(local_rows * row_size);
   for (int i = 0; i < local_rows; ++i) {
     int global_row = start_row + i;
     for (int col = 0; col < width; ++col) {
-      size_t input_idx = (global_row * width + col) * channels;
-      size_t output_idx = (i * width + col) * channels;
-
-      uint8_t r = input.pixels[input_idx];
-      uint8_t g = input.pixels[input_idx + 1];
-      uint8_t b = input.pixels[input_idx + 2];
-
-      if (global_max_r > global_min_r) {
-        float new_r = (r - global_min_r) * scale_r;
-        local_output[output_idx] = static_cast<uint8_t>(std::clamp(new_r, 0.0f, 255.0f));
-      } else {
-        local_output[output_idx] = r;
-      }
-
-      if (global_max_g > global_min_g) {
-        float new_g = (g - global_min_g) * scale_g;
-        local_output[output_idx + 1] = static_cast<uint8_t>(std::clamp(new_g, 0.0f, 255.0f));
-      } else {
-        local_output[output_idx + 1] = g;
-      }
-
-      if (global_max_b > global_min_b) {
-        float new_b = (b - global_min_b) * scale_b;
-        local_output[output_idx + 2] = static_cast<uint8_t>(std::clamp(new_b, 0.0f, 255.0f));
-      } else {
-        local_output[output_idx + 2] = b;
+      size_t in_idx = (global_row * width + col) * channels;
+      size_t out_idx = (i * width + col) * channels;
+      for (int c = 0; c < 3; ++c) {
+        uint8_t val = input.pixels[in_idx + c];
+        if (need_scale[c]) {
+          float new_val = (val - global_min[c]) * scale[c];
+          local_output[out_idx + c] = static_cast<uint8_t>(std::clamp(new_val, 0.0f, 255.0f));
+        } else {
+          local_output[out_idx + c] = val;
+        }
       }
     }
   }
 
   std::vector<int> recv_counts(size);
   std::vector<int> displs(size);
-
-  int row_size = width * channels;
-
   for (int i = 0; i < size; ++i) {
     int i_start_row = i * rows_per_process + std::min(i, remainder);
     int i_end_row = i_start_row + rows_per_process + (i < remainder ? 1 : 0);
     int i_rows = i_end_row - i_start_row;
-
     recv_counts[i] = i_rows * row_size;
     displs[i] = i_start_row * row_size;
   }
 
-  MPI_Allgatherv(local_output.data(), local_rows * row_size, MPI_UINT8_T, output.pixels.data(), recv_counts.data(),
-                 displs.data(), MPI_UINT8_T, MPI_COMM_WORLD);
+  MPI_Allgatherv(local_output.data(), local_rows * row_size, MPI_UINT8_T, output.pixels.data(), recv_counts.data(), displs.data(), MPI_UINT8_T, MPI_COMM_WORLD);
+
   return true;
 }
 

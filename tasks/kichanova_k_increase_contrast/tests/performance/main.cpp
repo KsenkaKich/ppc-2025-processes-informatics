@@ -12,7 +12,7 @@
 namespace kichanova_k_increase_contrast {
 
 class KichanovaKIncreaseContrastPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kWidth_ = 4096;
+  const int kWidth_ = 6144;
   const int kHeight_ = 4096;
 
   InType input_data_;
